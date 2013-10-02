@@ -1,0 +1,9 @@
+*/.classpath
+*/.project
+*/.settings
+*.jar
+*/target/classes/
+*/target/maven-archiver/
+*/target/m2e-wtp/
+rebel.xml
+*/target/
