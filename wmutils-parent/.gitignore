@@ -7,3 +7,4 @@
 */target/m2e-wtp/
 rebel.xml
 */target/
+*/.springBeans

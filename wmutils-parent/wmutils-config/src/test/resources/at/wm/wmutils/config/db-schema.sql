@@ -1,0 +1,1 @@
+create table app_config ( cfg_key varchar, cfg_value varchar );
