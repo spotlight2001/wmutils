@@ -19,7 +19,7 @@ public class DatabaseConfigIntegrationTest extends AbstractTest {
 		// change value in db
 		Assert.assertEquals(
 				1,
-				jdbcTemplate
+				super.simpleJdbcTemplate
 						.update("update app_config set cfg_value = 'http://abc.com' where cfg_key = 'app.url'"));
 
 		// sleep longer than caching time
