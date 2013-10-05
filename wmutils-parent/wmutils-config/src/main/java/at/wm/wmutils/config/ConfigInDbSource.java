@@ -3,12 +3,13 @@ package at.wm.wmutils.config;
 import java.lang.reflect.Field;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import javax.sql.DataSource;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Value;
@@ -22,16 +23,22 @@ import at.wm.util.SpringExpressionLanguageUtils;
 
 public class ConfigInDbSource implements InitializingBean,
 		ApplicationContextAware {
+
+	private final Log log = LogFactory.getLog(getClass());
+
 	private String table = "app_config";
 	private String columnKey = "cfg_key";
 	private String columnValue = "cfg_value";
-	private Integer cacheSeconds = 60;
+	private boolean refreshValueAnnotations = true;
 	// either inject or if only one exists - we use this
 	private DataSource dataSource;
 	private Map<String, Object> cache;
-	private Date timestampOfLastDbAccess = new Date(Long.MIN_VALUE);
 
 	private ApplicationContext applicationContext;
+
+	public void setRefreshValueAnnotations(boolean refreshValueAnnotations) {
+		this.refreshValueAnnotations = refreshValueAnnotations;
+	}
 
 	public void setTable(String table) {
 		this.table = table;
@@ -45,16 +52,21 @@ public class ConfigInDbSource implements InitializingBean,
 		this.columnValue = columnValue;
 	}
 
-	public void setCacheSeconds(Integer cacheSeconds) {
-		this.cacheSeconds = cacheSeconds;
-	}
-
 	public DataSource getDataSource() {
 		return dataSource;
 	}
 
 	public void setDataSource(DataSource dataSource) {
 		this.dataSource = dataSource;
+	}
+
+	public void setCache(Map<String, Object> cache) {
+		this.cache = cache;
+	}
+
+	public void setApplicationContext(ApplicationContext applicationContext)
+			throws BeansException {
+		this.applicationContext = applicationContext;
 	}
 
 	private void refreshAllValueAnnotations() {
@@ -102,7 +114,18 @@ public class ConfigInDbSource implements InitializingBean,
 		}
 	}
 
-	private Map<String, Object> loadValues() {
+	/** periodically refresh cache */
+	private void refreshCache() {
+		this.cache = loadValuesFromDatabase();
+		if (log.isDebugEnabled()) {
+			log.debug("scheduled cache refresh");
+		}
+		if (refreshValueAnnotations) {
+			refreshAllValueAnnotations();
+		}
+	}
+
+	private Map<String, Object> loadValuesFromDatabase() {
 		final Map<String, Object> result = new ConcurrentHashMap<String, Object>();
 
 		// fill data
@@ -118,32 +141,17 @@ public class ConfigInDbSource implements InitializingBean,
 			}
 		};
 		jdbc.query(sql, rowCallbackHandler);
-		timestampOfLastDbAccess = new Date();
-
 		return result;
 	}
 
-	// immutable
-	private Date addSeconds(Date in, int seconds) {
-		return new Date(in.getTime() + (seconds * 1000));
-	}
-
+	/** used by SPEL */
 	public Object getValue(String key) {
-		// is cache still valid?
-		Date now = new Date();
-		Date cacheExpirationDate = addSeconds(timestampOfLastDbAccess,
-				this.cacheSeconds);
-		boolean cacheExpired = now.after(cacheExpirationDate);
-		boolean reloadCache = this.cache == null || cacheExpired;
-
-		if (reloadCache) {
-			this.cache = loadValues();
-			// TODO optional
-			refreshAllValueAnnotations();
+		if (cache == null) {
+			refreshCache();
 		}
-
-		// now he hope to have the value
-		return this.cache.get(key);
+		Object valueObj = this.cache.get(key);
+		Assert.notNull(valueObj);
+		return valueObj;
 	}
 
 	public String getValueString(String key) {
@@ -172,10 +180,5 @@ public class ConfigInDbSource implements InitializingBean,
 		if (dataSources.size() == 1) {
 			this.dataSource = dataSources.values().iterator().next();
 		}
-	}
-
-	public void setApplicationContext(ApplicationContext applicationContext)
-			throws BeansException {
-		this.applicationContext = applicationContext;
 	}
 }

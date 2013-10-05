@@ -42,12 +42,11 @@ public class DatabaseConfigIntegrationTest extends AbstractTest {
 						+ "' where cfg_key = 'app.url'"));
 
 		// sleep longer than caching time
-		Thread.sleep(2 * 1000);
+		Thread.sleep((int) (1.5 * 1000));
 
 		// recheck values
 		// SPEL doesnt reevaluate on runtime
 		// -> expect old value
-		Assert.assertEquals(expectedUrl, testBeanWithValueAnnotations.url);
 		Assert.assertEquals(expectedUrl, testBeanWithXmlSpelInjections.getUrl());
 		Assert.assertEquals(expectedUsername,
 				testBeanWithXmlSpelInjections.getUsername());

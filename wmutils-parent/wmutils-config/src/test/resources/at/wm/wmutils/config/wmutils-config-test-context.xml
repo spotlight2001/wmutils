@@ -23,8 +23,10 @@
 		<property name="username" value="#{dbcfg.app.user}" />
 	</bean>
 
-	<bean id="dbcfg" class="at.wm.wmutils.config.ConfigInDbSource">
-		<property name="cacheSeconds" value="1" />
+	<bean id="dbcfg" class="at.wm.wmutils.config.ConfigInDbSource" />
+
+	<bean id="configCacheSeconds" class="java.lang.String">
+		<constructor-arg value="#{1 * 1000}" />
 	</bean>
 
 </beans>

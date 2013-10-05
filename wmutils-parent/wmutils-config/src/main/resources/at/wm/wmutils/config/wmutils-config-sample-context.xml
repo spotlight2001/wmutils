@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://www.springframework.org/schema/beans"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:task="http://www.springframework.org/schema/task"
+	xsi:schemaLocation="http://www.springframework.org/schema/task http://www.springframework.org/schema/task/spring-task-3.0.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
 
 	<!-- OUR EL RESOLVER CAN LOAD FROM DATABASE -->
 	<bean id="databaseBeanExpressionResolver" class="at.wm.wmutils.config.DatabaseBeanExpressionResolver" />
@@ -11,7 +12,22 @@
 		<property name="beanExpressionResolver" ref="databaseBeanExpressionResolver"></property>
 	</bean>
 
-	<!-- usage el: #{beanId.key} example: #{dbcfg.app.url} -->
-	<bean id="dbcfg" class="at.wm.wmutils.config.ConfigInDbSource" />
+	<!-- WE CONFIGURE A SOURCE FOR DATA usage el: #{beanId.key} example: #{dbcfg.app.url} -->
+	<bean id="dbcfg" class="at.wm.wmutils.config.ConfigInDbSource">
+		<property name="table" value="app_config" />
+		<property name="columnKey" value="cfg_key" />
+		<property name="columnValue" value="cfg_value" />
+	</bean>
+
+	<!-- WE CHECK FOR NEW DATA EVERY X MILLIS -->
+	<bean id="configCacheSeconds" class="java.lang.String">
+		<constructor-arg value="#{1 * 60 * 1000}" />
+	</bean>
+	<task:scheduler id="myScheduler" />
+	<task:scheduled-tasks>
+		<!-- FOR EVERY CONFIG SOURCE WE NEED A SCHEDULED TASK -->
+		<task:scheduled ref="dbcfg" method="refreshCache"
+			fixed-delay="#{configCacheSeconds}" />
+	</task:scheduled-tasks>
 
 </beans>
