@@ -5,17 +5,16 @@ import org.apache.commons.logging.LogFactory;
 import org.junit.Assert;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 
 public class DatabaseConfigIntegrationTest extends AbstractTest {
 
 	private final Log log = LogFactory.getLog(getClass());
 
-	@Value("#{dbcfg.app.url}")
-	private String urlBySpELAnnotation;
+	@Autowired
+	private TestBeanWithValueAnnotations testBeanWithValueAnnotations;
 
 	@Autowired
-	private TestBean testBeanWithSpelInjections;
+	private TestBean testBeanWithXmlSpelInjections;
 
 	@Autowired
 	private ConfigInDbSource configInDbSource;
@@ -31,9 +30,9 @@ public class DatabaseConfigIntegrationTest extends AbstractTest {
 
 		// check before cache evict
 		Assert.assertEquals(expectedUsername,
-				testBeanWithSpelInjections.getUsername());
-		Assert.assertEquals(expectedUrl, testBeanWithSpelInjections.getUrl());
-		Assert.assertEquals(expectedUrl, urlBySpELAnnotation);
+				testBeanWithXmlSpelInjections.getUsername());
+		Assert.assertEquals(expectedUrl, testBeanWithXmlSpelInjections.getUrl());
+		Assert.assertEquals(expectedUrl, testBeanWithValueAnnotations.url);
 
 		// change data
 		String expectedNewUrl = "http://new";
@@ -48,12 +47,13 @@ public class DatabaseConfigIntegrationTest extends AbstractTest {
 		// recheck values
 		// SPEL doesnt reevaluate on runtime
 		// -> expect old value
-		Assert.assertEquals(expectedUrl, urlBySpELAnnotation);
-		Assert.assertEquals(expectedUrl, testBeanWithSpelInjections.getUrl());
+		Assert.assertEquals(expectedUrl, testBeanWithValueAnnotations.url);
+		Assert.assertEquals(expectedUrl, testBeanWithXmlSpelInjections.getUrl());
 		Assert.assertEquals(expectedUsername,
-				testBeanWithSpelInjections.getUsername());
+				testBeanWithXmlSpelInjections.getUsername());
 
 		// this reevaluates
 		Assert.assertEquals(expectedNewUrl, cfg.getValueString("app.url"));
+		Assert.assertEquals(expectedNewUrl, testBeanWithValueAnnotations.url);
 	}
 }

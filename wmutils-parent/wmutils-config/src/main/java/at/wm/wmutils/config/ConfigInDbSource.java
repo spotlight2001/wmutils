@@ -1,5 +1,6 @@
 package at.wm.wmutils.config;
 
+import java.lang.reflect.Field;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Date;
@@ -10,11 +11,14 @@ import javax.sql.DataSource;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowCallbackHandler;
 import org.springframework.util.Assert;
+
+import at.wm.util.SpringExpressionLanguageUtils;
 
 public class ConfigInDbSource implements InitializingBean,
 		ApplicationContextAware {
@@ -53,6 +57,51 @@ public class ConfigInDbSource implements InitializingBean,
 		this.dataSource = dataSource;
 	}
 
+	private void refreshAllValueAnnotations() {
+		// get all spring beans
+		Map<String, Object> beans = applicationContext
+				.getBeansOfType(Object.class);
+
+		// foreach spring bean
+		for (Object valueAnnotatedBean : beans.values()) {
+			for (Field field : valueAnnotatedBean.getClass().getFields()) {
+
+				// check if @Value exists
+				Value valueAnnotation = field.getAnnotation(Value.class);
+				if (valueAnnotation == null) {
+					continue;
+				}
+
+				// get #{bla}
+				String expressionString = valueAnnotation.value();
+
+				// get spring bean name
+				String beanName = SpringExpressionLanguageUtils
+						.getBeanName(expressionString);
+				String key = SpringExpressionLanguageUtils
+						.getKey(expressionString);
+
+				// get spring bean
+				ConfigInDbSource other = applicationContext.getBean(beanName,
+						getClass());
+
+				// check if its another configured source
+				if (this != other) {
+					continue;
+				}
+
+				// get new cfg value from cfg-source
+				Object newValue = other.getValue(key);
+				try {
+					// set value by reflection
+					field.set(valueAnnotatedBean, newValue);
+				} catch (IllegalAccessException e) {
+					throw new IllegalArgumentException(e);
+				}
+			}
+		}
+	}
+
 	private Map<String, Object> loadValues() {
 		final Map<String, Object> result = new ConcurrentHashMap<String, Object>();
 
@@ -89,6 +138,8 @@ public class ConfigInDbSource implements InitializingBean,
 
 		if (reloadCache) {
 			this.cache = loadValues();
+			// TODO optional
+			refreshAllValueAnnotations();
 		}
 
 		// now he hope to have the value
