@@ -14,4 +14,13 @@
 		<property name="dataSource" ref="dataSource" />
 	</bean>
 
+	<bean class="at.wm.wmutils.config.TestBean" scope="prototype">
+		<property name="url" value="#{dbcfg.app.url}" />
+		<property name="username" value="#{dbcfg.app.user}" />
+	</bean>
+
+	<bean id="dbcfg" class="at.wm.wmutils.config.ConfigInDbSource">
+		<property name="cacheSeconds" value="1" />
+	</bean>
+
 </beans>
