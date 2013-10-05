@@ -1,27 +1,48 @@
-can have spring localized messages 
-* from database
-* caching configurable
+WHY?
+can have 
+* database configuration key|value
+* automatic reload
+* convention over configuration
 
+---
 
-doesnt work for "property"
-* @Value("${...}")
-* xml ... value="${bla}"
+final use:
 
-http://stackoverflow.com/questions/6246381/getting-localized-message-from-resourcebundle-via-annotations-in-spring-framewor
+annotation -> WORKS
+@Value("#{dbcfg.MY.COOL.KEY}") ...
 
+or
 
+programmatically
+@Autowired private ConfigInDbSource cfg;
+...
+cfg.getValueString("MY.COOL.KEY");
 
-ultimate goal:
-* @AutoWired Messages msg; + msg.get("myKey) -> value
-* xml: ... <property name="..." value="${bla}" />
-* @Value("${bla}"")
+or 
 
+xml -> !DOESNT RELOAD!
+<property name="..." value="#{dbcfg.MY.COOL.KEY}" />
 
-components:
-* database + sql (configurable table, columns)
-* some caching mechanism
-	* @cache -> spring
-	* map
-	* ehcache
-	* spring ReloadableResourceBundleMessageSource
-* wiring into spel
+---
+
+howto start:
+
+include to your spring application context:
+classpath:/at/wm/wmutils/config/wmutils-config-sample-context.xml
+
+---
+
+requirements:
+
+* 1x javax.sql.DataSource in application context (autodetected)
+* table called "app_config", with column: "cfg_key" and "cfg_value"
+(see \src\test\resources\at\wm\wmutils\config\db-schema.sql)
+
+---
+
+howto customize:
+* create a classpath:/wmutils-config-custom.properties (autodetected)
+
+whats configurable can be looked up in: src\main\resources\wmutils-config.properties
+
+---

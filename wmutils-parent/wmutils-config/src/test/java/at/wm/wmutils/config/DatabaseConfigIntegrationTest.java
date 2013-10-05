@@ -18,9 +18,6 @@ public class DatabaseConfigIntegrationTest extends AbstractTest {
 	private TestBean testBeanWithXmlSpelInjections;
 
 	@Autowired
-	private ConfigInDbSource configInDbSource;
-
-	@Autowired
 	private ConfigInDbSource cfg;
 
 	@Test
