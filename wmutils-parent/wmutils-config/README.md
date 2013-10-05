@@ -28,7 +28,7 @@ xml -> !DOESNT RELOAD!
 howto start:
 
 include to your spring application context:
-classpath:/at/wm/wmutils/config/wmutils-config-sample-context.xml
+classpath*:/at/wm/wmutils/config/wmutils-config-sample-context.xml
 
 ---
 

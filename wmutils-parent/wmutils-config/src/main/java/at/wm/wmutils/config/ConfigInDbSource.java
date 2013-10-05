@@ -115,7 +115,7 @@ public class ConfigInDbSource implements InitializingBean,
 	}
 
 	/** periodically refresh cache */
-	private void refreshCache() {
+	public void refreshCache() {
 		this.cache = loadValuesFromDatabase();
 		if (log.isDebugEnabled()) {
 			log.debug("scheduled cache refresh");
