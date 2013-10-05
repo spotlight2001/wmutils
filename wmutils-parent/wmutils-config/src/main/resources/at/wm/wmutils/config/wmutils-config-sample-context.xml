@@ -1,8 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://www.springframework.org/schema/beans"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:task="http://www.springframework.org/schema/task"
+	xmlns:context="http://www.springframework.org/schema/context"
 	xsi:schemaLocation="http://www.springframework.org/schema/task http://www.springframework.org/schema/task/spring-task-3.0.xsd
-		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.0.xsd">
+
+	<context:property-placeholder
+		location="classpath:/wmutils-config-custom.properties" order="1"
+		ignore-unresolvable="true" ignore-resource-not-found="true" />
+	<context:property-placeholder location="classpath:/wmutils-config.properties"
+		order="2" ignore-unresolvable="true" />
 
 	<!-- OUR EL RESOLVER CAN LOAD FROM DATABASE -->
 	<bean id="databaseBeanExpressionResolver" class="at.wm.wmutils.config.DatabaseBeanExpressionResolver" />
@@ -14,20 +22,16 @@
 
 	<!-- WE CONFIGURE A SOURCE FOR DATA usage el: #{beanId.key} example: #{dbcfg.app.url} -->
 	<bean id="dbcfg" class="at.wm.wmutils.config.ConfigInDbSource">
-		<property name="table" value="app_config" />
-		<property name="columnKey" value="cfg_key" />
-		<property name="columnValue" value="cfg_value" />
+		<property name="table" value="${config.db.table}" />
+		<property name="columnKey" value="${config.db.column.key}" />
+		<property name="columnValue" value="${config.db.column.value}" />
 	</bean>
 
-	<!-- WE CHECK FOR NEW DATA EVERY X MILLIS -->
-	<bean id="configCacheSeconds" class="java.lang.String">
-		<constructor-arg value="#{1 * 60 * 1000}" />
-	</bean>
 	<task:scheduler id="myScheduler" />
 	<task:scheduled-tasks>
 		<!-- FOR EVERY CONFIG SOURCE WE NEED A SCHEDULED TASK -->
 		<task:scheduled ref="dbcfg" method="refreshCache"
-			fixed-delay="#{configCacheSeconds}" />
+			fixed-delay="${config.db.caching.milliseconds}" />
 	</task:scheduled-tasks>
 
 </beans>
