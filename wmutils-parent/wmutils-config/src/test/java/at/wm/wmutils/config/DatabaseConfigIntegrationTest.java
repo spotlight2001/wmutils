@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 public class DatabaseConfigIntegrationTest extends AbstractTest {
 
+	@SuppressWarnings("unused")
 	private final Log log = LogFactory.getLog(getClass());
 
 	@Autowired
@@ -36,10 +37,9 @@ public class DatabaseConfigIntegrationTest extends AbstractTest {
 
 		// change data
 		String expectedNewUrl = "http://new";
-		Assert.assertEquals(
-				1,
-				super.jdbcTemplate.update("update app_config set cfg_value = '"
-						+ expectedNewUrl + "' where cfg_key = 'app.url'"));
+		Assert.assertEquals(1, super.simpleJdbcTemplate
+				.update("update app_config set cfg_value = '" + expectedNewUrl
+						+ "' where cfg_key = 'app.url'"));
 
 		// sleep longer than caching time
 		Thread.sleep(2 * 1000);
